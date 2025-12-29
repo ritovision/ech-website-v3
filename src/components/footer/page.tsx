@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { nav } from "@/constants/page";
+import { nav } from "@/constants/nav";
 import { socials } from "@/constants/page";
 import Link from "next/link";
 

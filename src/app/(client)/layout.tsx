@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import Navbar from "@/components/navbar/page";
+import Navbar from "@/components/navbar/Navbar";
 import Loader from "@/components/loader/page";
 import Footer from "@/components/footer/page";
 import { Analytics } from "@vercel/analytics/react"
