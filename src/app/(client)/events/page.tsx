@@ -11,17 +11,17 @@ export default function Events() {
   return (
     <PageContainer>
       <Heading text="Ethereum Cat Herders in Action" />
-      <Carousel>
+      <Carousel className="w-full">
         <CarouselContent>
           <CarouselItem>
-            <Image src={Event1Image} alt="Event 1" width={1000} height={1000} />
+            <Image src={Event1Image} alt="Event 1" width={1000} height={1000} className="w-full h-auto" />
           </CarouselItem>
           <CarouselItem>
-            <Image src={Event2Image} alt="Event 2" width={1000} height={1000} />
+            <Image src={Event2Image} alt="Event 2" width={1000} height={1000} className="w-full h-auto" />
           </CarouselItem>
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
+        <CarouselPrevious className="left-2 sm:-left-12" />
+        <CarouselNext className="right-2 sm:-right-12" />
       </Carousel>
       <div className="w-full flex justify-center relative py-10">
         <Image src={"/assets/yarn.png"} alt="yarn" width={500} height={500} />
@@ -60,14 +60,13 @@ export default function Events() {
           <p className="text-lg text-lightGray text-justify">
             The ETH Cat Herders headed to Devcon in Bangkok in November! Watch the videos of our recap and talks.
           </p>
-          <iframe 
-            width="560" 
-            height="315" 
-            src="https://www.youtube.com/embed/rksdvA4oHWU?si=kIxeIr9ArlHmUkkG" 
-            title="YouTube video player" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-            referrerPolicy="strict-origin-when-cross-origin" 
-            allowFullScreen 
+          <iframe
+            className="w-full aspect-video"
+            src="https://www.youtube.com/embed/rksdvA4oHWU?si=kIxeIr9ArlHmUkkG"
+            title="YouTube video player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
           />
         </div>
       </div>
@@ -115,14 +114,13 @@ export default function Events() {
         </div>
 
         <div className="flex flex-col justify-start max-w-xl space-y-6">
-          <iframe 
-            width="560" 
-            height="315" 
-            src="https://www.youtube.com/embed/v9G684uz6Rk?si=PDwjhCzqtqCPnUJO" 
-            title="YouTube video player" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-            referrerPolicy="strict-origin-when-cross-origin" 
-            allowFullScreen 
+          <iframe
+            className="w-full aspect-video"
+            src="https://www.youtube.com/embed/v9G684uz6Rk?si=PDwjhCzqtqCPnUJO"
+            title="YouTube video player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
           />
         </div>
       </div>
