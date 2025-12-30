@@ -170,8 +170,7 @@ export default function EIPResources() {
           </h1>
 
           <iframe
-            width="560"
-            height="315"
+            className="w-full aspect-video mb-8"
             src={
               "https://www.youtube.com/embed/videoseries?si=80VPFDAces4no7p5&amp;list=PL4cwHXAawZxqu0PKKyMzG_3BJV_xZTi1F"
             }
