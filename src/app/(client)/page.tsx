@@ -97,16 +97,12 @@ export default function Home() {
               allowTransparency={true}
               sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
             ></iframe> */}
-            <iframe 
-              // width="560" 
-              // height="315"
-              width="500" 
-              height="283"
-              src="https://www.youtube.com/embed/ZV8_NRSyQCM?si=8F9ex4mDaPS4lgw3" 
-              title="YouTube video player" 
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-              referrerPolicy="strict-origin-when-cross-origin" 
+            <iframe
+              className="w-full aspect-video max-w-[500px]"
+              src="https://www.youtube.com/embed/ZV8_NRSyQCM?si=8F9ex4mDaPS4lgw3"
+              title="YouTube video player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             ></iframe>
           </div>
