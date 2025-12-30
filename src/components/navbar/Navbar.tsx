@@ -17,17 +17,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CgArrowLeft, CgClose } from "react-icons/cg";
 import { IoMenuOutline } from "react-icons/io5";
 
@@ -40,6 +36,10 @@ export default function Navbar() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [panel, setPanel] = useState<"root" | "child">("root");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const lastScrollYRef = useRef(0);
 
   const activeItem = activeIndex !== null ? nav[activeIndex] : null;
   const activeChildren = activeItem?.children ?? [];
@@ -78,40 +78,88 @@ export default function Navbar() {
   }, [path, resetPanels]);
 
   useEffect(() => {
-    let ticking = false;
-    const updateScroll = () => {
-      setIsScrolled(window.scrollY > 0);
-      ticking = false;
-    };
-    const handleScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        window.requestAnimationFrame(updateScroll);
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.getBoundingClientRect().height);
       }
     };
 
-    updateScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    updateHeaderHeight();
+    window.addEventListener("resize", updateHeaderHeight);
+    return () => window.removeEventListener("resize", updateHeaderHeight);
   }, []);
 
-  const MenuLink = ({
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = (event?: Event) => {
+      if (ticking) {
+        return;
+      }
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const target = event?.target as HTMLElement | Document | null;
+        const isElementTarget =
+          target &&
+          target !== document &&
+          target !== document.documentElement &&
+          target !== document.body;
+        const targetScrollTop =
+          isElementTarget && "scrollTop" in target ? target.scrollTop : 0;
+        const docScrollTop =
+          document.scrollingElement?.scrollTop ||
+          document.documentElement.scrollTop ||
+          document.body.scrollTop ||
+          0;
+        const windowScrollTop = window.scrollY || 0;
+        const currentY = targetScrollTop || docScrollTop || windowScrollTop;
+        const delta = currentY - lastScrollYRef.current;
+
+        setIsScrolled(currentY > 0);
+
+        if (currentY <= headerHeight) {
+          setIsHidden(false);
+        } else if (delta > 0) {
+          setIsHidden(true);
+        } else if (delta < -8) {
+          setIsHidden(false);
+        }
+
+        lastScrollYRef.current = currentY;
+        ticking = false;
+      });
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("scroll", handleScroll, {
+      passive: true,
+      capture: true,
+    });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [headerHeight]);
+
+  const NavLink = ({
     item,
     className,
+    activeClassName,
+    inactiveClassName,
     onNavigate,
-    withNavLink = false,
   }: {
     item: Nav;
     className?: string;
+    activeClassName: string;
+    inactiveClassName: string;
     onNavigate?: () => void;
-    withNavLink?: boolean;
   }) => {
     const href = item.link || "/";
     const external = isExternalLink(href);
     const active = !external && path === href;
     const classes = cn(
       "block font-antonio transition-colors duration-200",
-      active ? "text-white" : "text-white/70 hover:text-white",
+      active ? activeClassName : inactiveClassName,
       className
     );
 
@@ -130,25 +178,15 @@ export default function Navbar() {
       </Link>
     );
 
-    if (external) {
-      return withNavLink ? (
-        <NavigationMenuLink asChild>{content}</NavigationMenuLink>
-      ) : (
-        content
-      );
-    }
-
-    return withNavLink ? (
-      <NavigationMenuLink asChild>{content}</NavigationMenuLink>
-    ) : (
-      content
-    );
+    return content;
   };
 
   return (
     <header
+      ref={headerRef}
       className={cn(
-        "fixed top-0 z-50 flex w-full items-center justify-between bg-white md:px-16 px-8 md:py-12 py-6 transition-shadow duration-300",
+        "fixed top-0 z-50 flex w-full items-center justify-between bg-white md:px-16 px-8 md:py-6 py-4 transition-all duration-300",
+        isHidden ? "-translate-y-full" : "translate-y-0",
         isScrolled ? "shadow-xl shadow-lightGray/30" : "shadow-none"
       )}
     >
@@ -162,11 +200,43 @@ export default function Navbar() {
         />
       </Link>
 
+      <nav className="hidden xl:flex gap-x-16 items-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {nav.map((item) => {
+          const hasChildren = item.children && item.children.length > 0;
+          if (hasChildren) {
+            return (
+              <DesktopNavPopover
+                key={item.label}
+                item={item}
+                renderLink={(linkItem, className) => (
+                  <NavLink
+                    item={linkItem}
+                    className={className}
+                    activeClassName="text-white"
+                    inactiveClassName="text-white/70 hover:text-white"
+                  />
+                )}
+              />
+            );
+          }
+
+          return (
+            <NavLink
+              key={item.label}
+              item={item}
+              className="text-3xl"
+              activeClassName="text-black"
+              inactiveClassName="text-lightGray hover:text-black"
+            />
+          );
+        })}
+      </nav>
+
       <Dialog open={isMenuOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <button
             type="button"
-            className="hover:cursor-pointer"
+            className="hover:cursor-pointer xl:hidden"
             aria-label="Open menu"
           >
             <IoMenuOutline size={50} />
@@ -177,7 +247,7 @@ export default function Navbar() {
           <DialogOverlay className="z-[60] bg-black/90" />
           <DialogPrimitive.Content className="fixed inset-0 z-[70] flex h-full flex-col bg-transparent text-white">
             <DialogTitle className="sr-only">Main menu</DialogTitle>
-            <div className="flex items-center justify-between md:pt-12 pt-6 md:px-16 px-8">
+            <div className="flex items-center justify-between md:pt-6 pt-4 md:px-16 px-8">
               <Link href="/" aria-label="Home" onClick={closeMenu}>
                 <Image
                   src="/assets/ech_horizontal_logo.svg"
@@ -195,17 +265,16 @@ export default function Navbar() {
             </div>
 
             <div className="relative flex-1 overflow-hidden">
-              <NavigationMenu className="h-full">
-                <div className="relative h-full">
+              <div className="relative h-full">
                   {panel === "root" && (
                     <div
                       className={cn(
                         "absolute inset-0 overflow-y-auto px-10 pb-10 min-[1000px]:pl-[10%] animate-in fade-in-0 duration-500"
                       )}
                     >
-                      <NavigationMenuList className="gap-8 text-5xl">
+                      <div className="flex flex-col gap-8 text-5xl">
                         {nav.map((item, index) => (
-                          <NavigationMenuItem key={item.label}>
+                          <div key={item.label}>
                             {item.children && item.children.length > 0 ? (
                               <button
                                 type="button"
@@ -215,16 +284,17 @@ export default function Navbar() {
                                 {item.label.toUpperCase()}
                               </button>
                             ) : (
-                              <MenuLink
+                              <NavLink
                                 item={item}
                                 className="text-5xl"
                                 onNavigate={closeMenu}
-                                withNavLink
+                                activeClassName="text-white"
+                                inactiveClassName="text-white/70 hover:text-white"
                               />
                             )}
-                          </NavigationMenuItem>
+                          </div>
                         ))}
-                      </NavigationMenuList>
+                      </div>
                     </div>
                   )}
 
@@ -260,15 +330,15 @@ export default function Navbar() {
                                 <AccordionTrigger className="text-3xl font-antonio text-white hover:no-underline">
                                   {item.label.toUpperCase()}
                                 </AccordionTrigger>
-                                <AccordionContent
-                                  className="mt-2 space-y-2 border-l-2 border-white/20 pl-6"
-                                >
+                                <AccordionContent className="mt-2 space-y-2 border-l-2 border-white/20 pl-6">
                                   {item.children.map((subItem, subIndex) => (
                                     <div key={`${subItem.label}-${subIndex}`}>
-                                      <MenuLink
+                                      <NavLink
                                         item={subItem}
-                                        className="text-2xl text-white/80"
+                                        className="text-2xl"
                                         onNavigate={closeMenu}
+                                        activeClassName="text-white"
+                                        inactiveClassName="text-white/70 hover:text-white"
                                       />
                                     </div>
                                   ))}
@@ -279,10 +349,12 @@ export default function Navbar() {
 
                           return (
                             <div key={item.label}>
-                              <MenuLink
+                              <NavLink
                                 item={item}
                                 className="text-3xl"
                                 onNavigate={closeMenu}
+                                activeClassName="text-white"
+                                inactiveClassName="text-white/70 hover:text-white"
                               />
                             </div>
                           );
@@ -290,12 +362,80 @@ export default function Navbar() {
                       </Accordion>
                     </div>
                   )}
-                </div>
-              </NavigationMenu>
+              </div>
             </div>
           </DialogPrimitive.Content>
         </DialogPortal>
       </Dialog>
     </header>
+  );
+}
+
+function DesktopNavPopover({
+  item,
+  renderLink,
+}: {
+  item: Nav;
+  renderLink: (item: Nav, className: string) => ReactNode;
+}) {
+  const [openValue, setOpenValue] = useState<string>("");
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="text-3xl font-antonio text-lightGray hover:text-black"
+        >
+          {item.label.toUpperCase()}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        sideOffset={16}
+        className="w-80 rounded-md bg-darkGray p-4 text-white shadow-xl"
+      >
+        <div className="flex flex-col gap-2">
+          {item.children?.map((child, childIndex) => {
+            if (child.children && child.children.length > 0) {
+              const value = `${child.label}-${childIndex}`;
+              return (
+                <Accordion
+                  key={value}
+                  type="single"
+                  collapsible
+                  value={openValue}
+                  onValueChange={setOpenValue}
+                  className="w-full"
+                >
+                  <AccordionItem
+                    value={value}
+                    className="border-none"
+                    onMouseEnter={() => setOpenValue(value)}
+                    onMouseLeave={() => setOpenValue("")}
+                  >
+                    <AccordionTrigger className="text-2xl font-antonio text-white hover:no-underline">
+                      {child.label.toUpperCase()}
+                    </AccordionTrigger>
+                    <AccordionContent className="mt-2 space-y-2 border-l-2 border-white/20 pl-4">
+                      {child.children.map((subItem, subIndex) => (
+                        <div key={`${subItem.label}-${subIndex}`}>
+                          {renderLink(subItem, "text-xl")}
+                        </div>
+                      ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              );
+            }
+
+            return (
+              <div key={`${child.label}-${childIndex}`}>
+                {renderLink(child, "text-2xl")}
+              </div>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
