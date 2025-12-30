@@ -8,6 +8,9 @@ export async function GET(
 ) {
   const { upgrade, username } = params;
   const eipAuthors = eipAuthorsByUpgrade[upgrade];
+  if (!upgrade || !username || !eipAuthors) {
+    return NextResponse.json({ author: null, hasClaimed: false });
+  }
   const author = findEipAuthorByGithubUsername(eipAuthors, username);
   if (!author) {
     return NextResponse.json({ author, hasClaimed: false });

@@ -11,9 +11,16 @@ import {
 import { base, baseSepolia, foundry, optimism, optimismSepolia } from "viem/chains"
 import { EipAuthor, NetworkUpgrade } from "@/constants/eip-authors";
 
-export const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID || process.env.CHAIN_ID)
+export const chainId = Number(
+  process.env.NEXT_PUBLIC_CHAIN_ID || process.env.CHAIN_ID
+);
 
-export const eipAuthorNftAddress = getAddress((process.env.NEXT_PUBLIC_EIP_AUTHOR_NFT_ADDRESS || process.env.EIP_AUTHOR_NFT_ADDRESS) as string)
+const rawEipAuthorNftAddress =
+  process.env.NEXT_PUBLIC_EIP_AUTHOR_NFT_ADDRESS ||
+  process.env.EIP_AUTHOR_NFT_ADDRESS;
+export const eipAuthorNftAddress = rawEipAuthorNftAddress
+  ? getAddress(rawEipAuthorNftAddress)
+  : undefined;
 
 const chains: Record<number, Chain> = {
   [foundry.id]: foundry,
@@ -33,13 +40,16 @@ export function getTokenIdOfUpgrade(upgrade: NetworkUpgrade) {
 
 export async function hasAlreadyClaimed(githubUsername: string, upgrade: NetworkUpgrade) {
   try {
+    if (!eipAuthorNftAddress || !getChain(chainId)) {
+      return false
+    }
     const tokenId = getTokenIdOfUpgrade(upgrade)
     const client = createPublicClient({
       chain: getChain(chainId),
       transport: http()
     })
     const alreadyClaimed = await client.readContract({
-      address: process.env.EIP_AUTHOR_NFT_ADDRESS as `0x${string}`,
+      address: eipAuthorNftAddress,
       abi: parseAbi([
         'function claimed(string calldata author, uint256 id) external view returns (bool)'
       ]),

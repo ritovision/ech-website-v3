@@ -5,6 +5,13 @@ import { http, isAddress, parseAbi, createWalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 export async function POST(req: NextRequest, { params }: { params: { upgrade: NetworkUpgrade } }) {
+  if (!eipAuthorNftAddress || !getChain(chainId)) {
+    return NextResponse.json(
+      { error: "EIP author contract not configured" },
+      { status: 500 }
+    )
+  }
+
   const { githubUsername, address } = await req.json();
   const upgrade = params.upgrade;
 
