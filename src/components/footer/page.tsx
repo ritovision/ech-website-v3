@@ -84,7 +84,7 @@ export default function Footer() {
         </div>
       </div>
       <p className="text-center text-lightGray text-xs pb-2">All content and resources on our website are for educational purposes only.</p>
-      <p className="text-center text-lightGray text-sm">© 2024 ECH Institute, Inc.</p>
+      <p className="text-center text-lightGray text-sm">© 2026 ECH Institute, Inc.</p>
     </div>
   );
 }
